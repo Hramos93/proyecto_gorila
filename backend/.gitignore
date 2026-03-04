@@ -1,0 +1,22 @@
+# --- Python / Django ---
+# Ignorar archivos compilados de Python para evitar conflictos entre sistemas operativos
+*.pyc
+__pycache__/
+
+# Ignorar la base de datos local SQLite (en producción se usará PostgreSQL)
+db.sqlite3
+
+# Ignorar archivos multimedia subidos por usuarios (ej. capturas de WhatsApp o pagos)
+media/
+assets/
+
+# --- Node / React ---
+# Ignorar dependencias pesadas de Node (se instalan via package.json)
+node_modules/
+
+# Ignorar la carpeta de construcción de producción
+dist/
+
+# --- Sistema Operativo ---
+.DS_Store
+Thumbs.db
