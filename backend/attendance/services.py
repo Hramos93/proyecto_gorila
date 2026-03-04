@@ -1,14 +1,20 @@
+# backend/attendance/services.py
+
 import cv2
 import numpy as np
 import pytesseract
 import re
+import os  # <-- NUEVO: Importamos os para manejar variables de entorno
 from fuzzywuzzy import process, fuzz
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from users.models import User
 
-# --- AGREGA ESTA LÍNEA PARA WINDOWS ---
-# Cambia la ruta si lo instalaste en otra carpeta
+# 1. Ruta al programa ejecutable
 pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
+
+# 2. NUEVO: Le decimos a Tesseract exactamente dónde están los idiomas
+os.environ['TESSDATA_PREFIX'] = r'C:\Program Files\Tesseract-OCR\tessdata\tessdata'
+
 
 class WhatsAppOCRService:
     """
@@ -25,27 +31,25 @@ class WhatsAppOCRService:
 
     def _preprocess_image(self):
         """
-        Paso 1: Invertir colores (Dark Mode a Light Mode) y binarizar.
+        Paso 1: Escalar, Invertir colores (Dark Mode a Light Mode) y binarizar.
         """
-        # Convertir archivo en memoria a formato matricial de OpenCV
         file_bytes = np.asarray(bytearray(self.image_file.read()), dtype=np.uint8)
         img = cv2.imdecode(file_bytes, cv2.IMREAD_COLOR)
         
-        # Convertir a escala de grises
+        # MAGIA NUEVA: Escalar la imagen al doble (x2)
+        # Esto es vital para que Tesseract no confunda números con letras (8 vs B, 4 vs A)
+        img = cv2.resize(img, None, fx=2, fy=2, interpolation=cv2.INTER_CUBIC)
+        
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         
-        # MAGIA DE OPENCV: Como es Dark Mode (texto blanco/fondo oscuro), 
-        # usamos THRESH_BINARY_INV + OTSU. Esto detecta automáticamente el nivel 
-        # de oscuridad y convierte el fondo a blanco y el texto a negro.
         _, self.processed_img = cv2.threshold(
             gray, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU
         )
 
     def _extract_and_clean_text(self):
         """
-        Paso 2: Leer el texto con Tesseract y aplicar limpieza Regex basada en los patrones de Energy Box.
+        Paso 2: Leer el texto con Tesseract y aplicar Regex avanzada.
         """
-        # oem 3 = Default OCR engine, psm 6 = Asumir un solo bloque de texto uniforme
         custom_config = r'--oem 3 --psm 6' 
         raw_text = pytesseract.image_to_string(self.processed_img, config=custom_config, lang='spa')
         
@@ -55,33 +59,35 @@ class WhatsAppOCRService:
         for line in lines:
             line = line.strip()
 
-            # 1. Ignorar líneas vacías o muy cortas (ruido de la imagen)
             if len(line) < 3:
                 continue
 
             lower_line = line.lower()
 
-            # 2. Ignorar cabeceras y timestamps de WhatsApp
-            if any(word in lower_line for word in ['asistencia', 'buenos días', 'entrenadora', 'hoy']):
-                continue
-            # Regex para detectar "10:03 a. m." o "9:45 p. m."
-            if re.match(r'^\d{1,2}:\d{2}\s*(a\.?\s*m\.?|p\.?\s*m\.?)$', lower_line):
+            # 1. Ignorar cabeceras típicas
+            if any(word in lower_line for word in ['asistencia', 'buenos días', 'entrenadora', 'hoy', 'buenas tardes']):
                 continue
             
-            # 3. Ignorar notas de pie de página (ej. "*Las nuevas pagarán...")
+            # 2. Eliminar marcas de tiempo sueltas o pegadas al final (Ej: "10:03 a.m." o "vdalmy 1003a.m")
+            # Busca y corta cualquier cosa que parezca una hora al final de la línea
+            line = re.sub(r'\s*\d{1,4}\s*:?\s*\d{0,2}\s*[ap]\.?\s*m\.?$', '', line, flags=re.IGNORECASE)
+
             if line.startswith('*'):
                 continue
 
-            # 4. Limpiar prefijos numéricos (Convierte "1-Mafer" o "2. Nidia" -> "Mafer", "Nidia")
-            # Busca dígitos al inicio, seguidos de guion, punto o paréntesis y un espacio opcional
-            line = re.sub(r'^\d+[\-\.\)]\s*', '', line)
+            # 3. SUPER REGEX: Limpiar prefijos numéricos Y letras confundidas 
+            # (Convierte "1-Mafer", "A-Gabriela", "B-Elimar" -> "Mafer", "Gabriela", "Elimar")
+            # Busca de 1 a 2 caracteres (letras o números) seguidos de guion, punto o paréntesis
+            line = re.sub(r'^[\w\d]{1,2}[\-\.\)]\s*', '', line)
 
-            # 5. Limpiar notas inline (Convierte "Junior *pago móvil..." -> "Junior")
-            # Corta el string exactamente donde encuentre un asterisco o un paréntesis
+            # 4. Limpiar notas inline (Convierte "Junior *pago móvil..." -> "Junior")
             line = re.split(r'[\*\(]', line)[0].strip()
 
+            # 5. Limpieza final de espacios o caracteres basura residuales al inicio
+            line = re.sub(r'^[^a-zA-Z]+', '', line)
+
             if len(line) >= 3:
-                cleaned_names.append(line)
+                cleaned_names.append(line.capitalize()) # Capitalize para que quede bonito ("Mafer")
 
         self.extracted_text = cleaned_names
 
