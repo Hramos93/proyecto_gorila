@@ -141,3 +141,9 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Le decimos a Django que nuestro modelo oficial de usuarios es el que está en la app 'users'
+AUTH_USER_MODEL = 'users.User'
+
+# Le decimos a Django que nuestro modelo oficial de usuarios es el que está en la app 'users'
+AUTH_USER_MODEL = 'users.User'
