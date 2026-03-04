@@ -1,12 +1,12 @@
-/* Estas tres directivas inyectan todo el código de Tailwind */
+/* frontend/src/index.css */
+
+/* Directivas estándar de Tailwind CSS v3. Son más compatibles. */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Estilos globales básicos para Energy Box */
+/* Mantén tus estilos personalizados debajo */
 body {
-    background-color: #1a1a1a; /* Usamos el brand-dark definido arriba */
-    color: #ffffff; /* Texto blanco por defecto para contraste */
     margin: 0;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
 }
