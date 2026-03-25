@@ -34,6 +34,7 @@ INSTALLED_APPS = [
     'users.apps.UsersConfig',           # Gestión de usuarios
     'attendance.apps.AttendanceConfig', # Gestión de asistencia
     'payments.apps.PaymentsConfig',     # Gestión de pagos
+    'customers.apps.CustomersConfig',   # App de Clientes (Nueva)
 ]
 
 MIDDLEWARE = [
@@ -121,13 +122,20 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
     "http://127.0.0.1:5173",
 ]
+# Acepta cookies y credenciales de autenticación del frontend
+CORS_ALLOW_CREDENTIALS = True
+
 
 # --- REST FRAMEWORK CONFIG ---
 REST_FRAMEWORK = {
-    # Para la fase de desarrollo inicial, permitimos acceso sin token.
-    # Fase 3: Cambiaremos esto a 'IsAuthenticated'.
+    # Ahora, todos los endpoints requerirán autenticación por defecto.
+    # Los endpoints públicos deben sobreescribir esto con `permission_classes = [AllowAny]`.
     'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.AllowAny',
+        'rest_framework.permissions.IsAuthenticated',
+    ],
+    # Le decimos a DRF que el método de autenticación principal es la sesión de Django.
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.SessionAuthentication',
     ],
 }
 

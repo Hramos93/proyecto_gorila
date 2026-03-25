@@ -7,5 +7,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     
     # Versionado de API (Buena práctica arquitectónica)
-    path('api/v1/attendance/', include('attendance.urls')),
+    path('api/v1/', include('users.urls')),
+    path('api/v1/', include('attendance.urls')),
+    path('api/v1/', include('customers.urls')),
 ]

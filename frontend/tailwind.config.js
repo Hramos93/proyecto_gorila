@@ -14,11 +14,7 @@ export default {
     extend: {
       // Agregamos colores personalizados para el CRM del gimnasio
       colors: {
-        brand: {
-          dark: '#1a1a1a', // Un gris casi negro para los fondos principales
-          neon: '#ccff00', // Un verde/amarillo neón muy usado en fitness
-          gray: '#2d2d2d', // Gris secundario para tarjetas y paneles
-        }
+
       }
     },
   },
