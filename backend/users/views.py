@@ -1,46 +1,38 @@
-from django.db.models import Q
-from rest_framework import viewsets, status
-from rest_framework.decorators import action
+# backend/users/views.py
+from django.contrib.auth import authenticate, login, logout
+from rest_framework.views import APIView
 from rest_framework.response import Response
-from .models import User
-from .serializers import UserCreateSerializer, UserBasicSerializer
+from rest_framework import status
+from rest_framework.permissions import AllowAny, IsAuthenticated
 
-class UserViewSet(viewsets.GenericViewSet):
-    """
-    ViewSet para operaciones relacionadas con usuarios.
-    """
-    queryset = User.objects.all()
-    
-    @action(detail=False, methods=['POST'], url_path='quick-create')
-    def quick_create(self, request):
-        """
-        Crea un nuevo usuario (cliente) de forma rápida.
-        """
-        serializer = UserCreateSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        user = serializer.save()
-        
-        # Devolvemos los datos básicos del usuario recién creado
-        response_serializer = UserBasicSerializer(user)
-        return Response(response_serializer.data, status=status.HTTP_201_CREATED)
+from .serializers import UserBasicSerializer
 
-    @action(detail=False, methods=['GET'], url_path='search')
-    def search(self, request):
-        """
-        Busca usuarios por nombre, apellido o número de documento.
-        """
-        query = request.query_params.get('q', None)
-        if not query or len(query) < 2:
-            return Response([], status=status.HTTP_200_OK)
+class LoginView(APIView):
+    permission_classes = [AllowAny] # Cualquiera puede intentar iniciar sesión
 
-        # Buscamos coincidencias en varios campos
-        users = User.objects.filter(
-            Q(first_name__icontains=query) |
-            Q(last_name__icontains=query) |
-            Q(internal_code__icontains=query) |
-            Q(document_number__icontains=query)
-        )[:10]  # Limitamos a 10 resultados para no sobrecargar
-        
-        serializer = UserBasicSerializer(users, many=True)
+    def post(self, request, format=None):
+        username = request.data.get('username')
+        password = request.data.get('password')
+
+        user = authenticate(request, username=username, password=password)
+
+        if user is not None:
+            login(request, user)
+            serializer = UserBasicSerializer(user)
+            return Response(serializer.data)
+        else:
+            return Response({'error': 'Credenciales inválidas'}, status=status.HTTP_401_UNAUTHORIZED)
+
+class LogoutView(APIView):
+    permission_classes = [IsAuthenticated] # Solo usuarios logueados pueden salir
+
+    def post(self, request, format=None):
+        logout(request)
+        return Response({'detail': 'Sesión cerrada correctamente.'}, status=status.HTTP_200_OK)
+
+class SessionView(APIView):
+    permission_classes = [IsAuthenticated] # Verifica la sesión para usuarios autenticados
+
+    def get(self, request, format=None):
+        serializer = UserBasicSerializer(request.user)
         return Response(serializer.data)
-

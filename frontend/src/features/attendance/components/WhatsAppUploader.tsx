@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { UploadCloud, Loader2, CheckCircle, AlertCircle, Check, X } from 'lucide-react';
 import { isAxiosError } from 'axios';
+import { toast } from 'react-hot-toast';
 import { apiClient } from '../../../api/client';
 import type { OCRResponse, MatchedUser } from '../types';
 import { UnmatchedRow } from './UnmatchedRow';
@@ -76,13 +77,13 @@ export const WhatsAppUploader = () => {
     const attendance_timestamp = date.toISOString();
 
     try {
-      await apiClient.post('/attendance/bulk-confirm/', {
+      await apiClient.post('/attendances/bulk-confirm/', {
         user_ids: user_ids,
         entry_method: 'WHATSAPP',
         attendance_date: attendance_timestamp,
       });
       
-      alert('¡Asistencia confirmada con éxito!');
+      toast.success('¡Asistencia confirmada con éxito!');
       resetState();
 
     } catch (err) {
@@ -110,7 +111,7 @@ export const WhatsAppUploader = () => {
     formData.append('image', file);
 
     try {
-      const response = await apiClient.post<OCRResponse>('/attendance/upload-whatsapp/', formData, {
+      const response = await apiClient.post<OCRResponse>('/attendances/upload-whatsapp/', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
 

@@ -1,137 +1,127 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Users, Search, Loader, AlertTriangle } from 'lucide-react';
+import { User, Calendar, AlertCircle, Loader2 } from 'lucide-react';
 import { apiClient } from '../../../api/client';
-import type { Customer } from '../types';
+import type { CustomerBoard, CustomerCard } from '../types';
 
-const useDebounce = (value: string, delay: number) => {
-    const [debouncedValue, setDebouncedValue] = useState(value);
-    useEffect(() => {
-        const handler = setTimeout(() => {
-            setDebouncedValue(value);
-        }, delay);
-        return () => clearTimeout(handler);
-    }, [value, delay]);
-    return debouncedValue;
+// --- Reusable Components ---
+
+const CustomerCardComponent = ({ customer }: { customer: CustomerCard }) => {
+    const formatDate = (dateString: string | null) => {
+        if (!dateString) return 'N/A';
+        return new Date(dateString).toLocaleDateString('es-VE', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+        });
+    };
+
+    return (
+        <div className="bg-zinc-800/50 p-3 rounded-lg border border-zinc-700 hover:border-yellow-400 transition-colors cursor-pointer">
+            <Link to={`/customers/${customer.id}`} className="block">
+                <p className="font-semibold text-slate-100 truncate">{customer.full_name}</p>
+                <div className="flex items-center gap-2 mt-1.5 text-xs text-zinc-400">
+                    <Calendar className="w-3 h-3" />
+                    <span>Vence: {formatDate(customer.membership_end_date)}</span>
+                </div>
+            </Link>
+        </div>
+    );
 };
 
+const BoardColumn = ({ title, customers, color, count }: { title: string; customers: CustomerCard[]; color: string; count: number }) => {
+    return (
+        <div className="bg-zinc-900 rounded-xl flex-1 min-w-[280px]">
+            <div className={`p-4 border-b-4 ${color} rounded-t-xl`}>
+                <h3 className="font-bold text-lg text-slate-100 flex justify-between items-center">
+                    {title}
+                    <span className="text-sm font-semibold bg-zinc-700/50 text-slate-300 px-2.5 py-1 rounded-full">{count}</span>
+                </h3>
+            </div>
+            <div className="p-4 space-y-3 h-[calc(100vh-20rem)] overflow-y-auto">
+                {customers.length > 0 ? (
+                    customers.map(customer => <CustomerCardComponent key={customer.id} customer={customer} />)
+                ) : (
+                    <div className="text-center text-sm text-zinc-500 pt-8">
+                        <p>No hay clientes en esta categoría.</p>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+};
+
+
+// --- Main Board Component ---
+
 export const CustomerList = () => {
-    const [customers, setCustomers] = useState<Customer[]>([]);
+    const [boardData, setBoardData] = useState<CustomerBoard | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [searchTerm, setSearchTerm] = useState('');
-    
-    const debouncedSearchTerm = useDebounce(searchTerm, 300);
 
     useEffect(() => {
-        const fetchCustomers = async () => {
+        const fetchBoardData = async () => {
             setIsLoading(true);
-            setError(null);
             try {
-                const response = await apiClient.get('/customers/', {
-                    params: { search: debouncedSearchTerm },
-                });
-                setCustomers(response.data);
+                const response = await apiClient.get<CustomerBoard>('/customers/board/');
+                setBoardData(response.data);
             } catch (err) {
-                setError('Failed to fetch customers.');
+                setError('No se pudo cargar la información del tablero.');
                 console.error(err);
             } finally {
                 setIsLoading(false);
             }
         };
+        fetchBoardData();
+    }, []);
 
-        fetchCustomers();
-    }, [debouncedSearchTerm]);
-
-    const formatStatus = (isActive: boolean, lastAttendance: string | null) => {
-        if (!lastAttendance) {
-            return { text: 'Nunca Asistió', color: 'bg-zinc-500' };
-        }
-        const lastDate = new Date(lastAttendance);
-        const diffDays = (new Date().getTime() - lastDate.getTime()) / (1000 * 3600 * 24);
-        
-        if (!isActive) return { text: 'Inactivo', color: 'bg-red-500' };
-        if (diffDays <= 7) return { text: 'Activo', color: 'bg-green-500' };
-        if (diffDays <= 30) return { text: 'Reciente', color: 'bg-yellow-500' };
-        return { text: 'Inactivo', color: 'bg-red-500' };
+    const columnConfig = {
+        active: { title: 'Activos', color: 'border-green-500' },
+        due: { title: 'Próximos a Vencer', color: 'border-yellow-500' },
+        expired: { title: 'Vencidos', color: 'border-red-500' },
+        never_active: { title: 'Nunca Activos', color: 'border-zinc-600' }
     };
 
-    return (
-        <div className="bg-zinc-950 min-h-screen text-white p-6">
-            <header className="mb-8">
-                <h1 className="text-3xl font-bold text-yellow-400 flex items-center gap-3">
-                    <Users className="w-8 h-8" />
-                    Directorio de Clientes
-                </h1>
-                <div className="mt-4 flex justify-between items-center">
-                    <div className="relative w-full max-w-sm">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-400" />
-                        <input
-                            type="text"
-                            placeholder="Buscar por nombre, apellido, DNI..."
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            className="w-full bg-zinc-800 border border-zinc-700 rounded-md pl-10 pr-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-yellow-500"
-                        />
-                    </div>
-                    <div className="text-right">
-                        <p className="text-zinc-400 text-sm">Total de Clientes</p>
-                        <p className="text-2xl font-bold text-yellow-400">{customers.length}</p>
-                    </div>
-                </div>
-            </header>
+    if (isLoading) {
+        return (
+            <div className="flex justify-center items-center h-[calc(100vh-4rem)]">
+                <Loader2 className="w-16 h-16 text-yellow-400 animate-spin" />
+                <p className="ml-4 text-lg">Cargando Tablero...</p>
+            </div>
+        );
+    }
 
-            <main>
-                {isLoading ? (
-                    <div className="flex justify-center items-center h-64">
-                        <Loader className="w-12 h-12 text-yellow-400 animate-spin" />
-                    </div>
-                ) : error ? (
-                    <div className="text-center text-red-400 flex flex-col items-center gap-4">
-                        <AlertTriangle className="w-12 h-12" />
-                        <p>{error}</p>
-                    </div>
-                ) : customers.length === 0 ? (
-                    <div className="text-center text-zinc-400">
-                        <p>No se encontraron clientes{debouncedSearchTerm && ` que coincidan con "${debouncedSearchTerm}"`}.</p>
-                    </div>
-                ) : (
-                    <div className="overflow-x-auto rounded-lg border border-zinc-800">
-                        <table className="min-w-full divide-y divide-zinc-800">
-                            <thead className="bg-zinc-900">
-                                <tr>
-                                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-zinc-300 uppercase tracking-wider">Nombre</th>
-                                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-zinc-300 uppercase tracking-wider">DNI</th>
-                                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-zinc-300 uppercase tracking-wider">Teléfono</th>
-                                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-zinc-300 uppercase tracking-wider">Estado</th>
-                                    <th scope="col" className="relative px-6 py-3"><span className="sr-only">Acciones</span></th>
-                                </tr>
-                            </thead>
-                            <tbody className="bg-zinc-950 divide-y divide-zinc-800">
-                                {customers.map((customer) => {
-                                    const status = formatStatus(customer.is_active, customer.last_attendance_date);
-                                    return (
-                                        <tr key={customer.id} className="hover:bg-zinc-800/50 transition-colors border-l-4 border-transparent hover:border-yellow-500">
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-white">{customer.full_name}</td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-zinc-300 font-mono">{customer.dni}</td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-zinc-300">{customer.phone || 'N/A'}</td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm">
-                                                <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${status.color} text-white`}>
-                                                    {status.text}
-                                                </span>
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                                <Link to={`/customers/${customer.id}`} className="text-yellow-400 hover:text-yellow-300">
-                                                    Ver Perfil
-                                                </Link>
-                                            </td>
-                                        </tr>
-                                    );
-                                })}
-                            </tbody>
-                        </table>
-                    </div>
-                )}
+    if (error) {
+        return (
+            <div className="flex flex-col justify-center items-center h-[calc(100vh-4rem)] text-red-400">
+                <AlertCircle className="w-16 h-16" />
+                <p className="mt-4 text-lg">{error}</p>
+            </div>
+        );
+    }
+
+    return (
+        <div className="p-6 bg-zinc-950" data-testid="customer-kanban-board">
+             <header className="mb-6">
+                <h1 className="text-3xl font-bold text-slate-100 flex items-center gap-3">
+                    <User className="w-8 h-8 text-yellow-400" />
+                    Tablero de Clientes
+                </h1>
+                <p className="text-zinc-400 mt-1">Gestiona el estado de las membresías de tus clientes de forma visual.</p>
+            </header>
+            <main className="flex gap-6 overflow-x-auto pb-4">
+                {boardData && Object.entries(boardData).map(([key, customers]) => {
+                    const config = columnConfig[key as keyof typeof columnConfig];
+                    return (
+                        <BoardColumn
+                            key={key}
+                            title={config.title}
+                            color={config.color}
+                            customers={customers}
+                            count={customers.length}
+                        />
+                    );
+                })}
             </main>
         </div>
     );

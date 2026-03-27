@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { UserPlus, Link, Loader2, Search, UserCheck } from 'lucide-react';
-import { apiClient, isAxiosError } from '../../../api/client';
+import { apiClient } from '../../../api/client';
+import { isAxiosError } from 'axios';
 import type { MatchedUser, User } from '../types';
 
 // Simple debounce hook

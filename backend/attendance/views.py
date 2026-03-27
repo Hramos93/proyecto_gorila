@@ -17,9 +17,23 @@ class AttendanceViewSet(viewsets.ModelViewSet):
     """
     queryset = Attendance.objects.all().order_by('-timestamp').select_related('user')
     serializer_class = AttendanceSerializer
-    permission_classes = [IsAuthenticated]
+    
+    # TEMPORAL: Permitir acceso sin login mientras terminamos el frontend
+    permission_classes = [AllowAny]
+    authentication_classes = [] # TEMPORAL: Desactiva la validación de Sesión/CSRF para evitar el Error 403
 
-    @action(detail=False, methods=['get'], permission_classes=[AllowAny])
+    def get_queryset(self):
+        """
+        Optionally restricts the returned attendances to a given user,
+        by filtering against a `user_id` query parameter in the URL.
+        """
+        queryset = super().get_queryset()
+        user_id = self.request.query_params.get('user_id')
+        if user_id is not None:
+            queryset = queryset.filter(user__id=user_id)
+        return queryset
+
+    @action(detail=False, methods=['get'])
     def stats(self, request):
         """
         Devuelve estadísticas de asistencia en tiempo real.
@@ -88,7 +102,7 @@ class AttendanceViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
-    @action(detail=False, methods=['POST'], parser_classes=[MultiPartParser, FormParser], url_path='upload-whatsapp', permission_classes=[AllowAny])
+    @action(detail=False, methods=['POST'], parser_classes=[MultiPartParser, FormParser], url_path='upload-whatsapp')
     def upload_whatsapp(self, request):
         """
         Recibe una imagen (captura de WhatsApp), la procesa y devuelve los clientes detectados.

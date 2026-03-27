@@ -1,47 +1,63 @@
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route, NavLink } from 'react-router-dom';
-import { Dumbbell, Users, LayoutDashboard } from 'lucide-react';
-import { Dashboard } from './features/dashboard/Dashboard';
-import { CustomerList } from './features/customers/components/CustomerList';
-import { CustomerDetail } from './features/customers/components/CustomerDetail';
+import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
+import CustomerListPage from './features/customers/CustomerListPage';
+import { WhatsAppUploader } from './features/attendance/components/WhatsAppUploader';
 
-const App = () => {
+// Un componente Home básico con botones de navegación
+const Home = () => {
   return (
-    <Router>
-      <div className="min-h-screen bg-zinc-950 text-white font-sans selection:bg-yellow-400 selection:text-black">
-        <header className="border-b border-zinc-800 bg-zinc-950/80 backdrop-blur-md sticky top-0 z-50">
-          <div className="max-w-screen-2xl mx-auto px-6 h-16 flex items-center justify-between">
-            <div className="flex items-center space-x-6">
-              <div className="flex items-center space-x-3">
-                  <Dumbbell className="text-yellow-400 w-8 h-8" />
-                  <h1 className="text-2xl font-bold tracking-tighter">
-                      ENERGY<span className="text-yellow-400">BOX</span>
-                  </h1>
-              </div>
-              <nav className="flex items-center gap-4">
-                <NavLink to="/" end className={({ isActive }) =>`flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-md transition-colors ${isActive ? 'bg-yellow-400 text-zinc-900' : 'text-zinc-300 hover:bg-zinc-800'}`}>
-                  <LayoutDashboard className="w-4 h-4" />
-                  Dashboard
-                </NavLink>
-                <NavLink to="/customers" className={({ isActive }) =>`flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-md transition-colors ${isActive ? 'bg-yellow-400 text-zinc-900' : 'text-zinc-300 hover:bg-zinc-800'}`}>
-                  <Users className="w-4 h-4" />
-                  Clientes
-                </NavLink>
-              </nav>
-            </div>
-            <div className="text-sm text-zinc-500">
-              CRM Administrativo
-            </div>
-          </div>
-        </header>
-
-        <Routes>
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/customers" element={<CustomerList />} />
-          <Route path="/customers/:id" element={<CustomerDetail />} />
-        </Routes>
+    <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4">
+      <h1 className="text-4xl font-bold text-gray-900 mb-8">Energy Box CRM</h1>
+      <div className="flex flex-wrap justify-center gap-4">
+        <Link 
+          to="/customers" 
+          className="bg-brand-primary text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-600 transition-colors shadow-md"
+        >
+          Gestión de Clientes
+        </Link>
+        <Link 
+          to="/attendance" 
+          className="bg-brand-success text-white px-6 py-3 rounded-lg font-semibold hover:bg-green-600 transition-colors shadow-md"
+        >
+          Control de Asistencia
+        </Link>
+        <Link 
+          to="/login" 
+          className="bg-slate-800 text-white px-6 py-3 rounded-lg font-semibold hover:bg-slate-700 transition-colors shadow-md"
+        >
+          Iniciar Sesión
+        </Link>
       </div>
-    </Router>
+    </div>
+  );
+};
+
+// Un placeholder temporal para el Login
+const DummyLogin = () => (
+  <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50">
+    <h2 className="text-2xl font-bold mb-4 text-gray-800">Página de Login (En construcción)</h2>
+    <Link to="/" className="text-brand-primary hover:underline">
+      &larr; Volver al inicio
+    </Link>
+  </div>
+);
+
+function App() {
+  return (
+    <BrowserRouter>
+      <Routes>
+        {/* La ruta raíz ("/") ahora muestra el Home en lugar de redirigir */}
+        <Route path="/" element={<Home />} />
+        
+        {/* La nueva página de clientes estará en la ruta /customers */}
+        <Route path="/customers" element={<CustomerListPage />} />
+
+        {/* Conectamos la página de Asistencia que ya tenías */}
+        <Route path="/attendance" element={<WhatsAppUploader />} />
+
+        {/* Ruta temporal para el Login */}
+        <Route path="/login" element={<DummyLogin />} />
+      </Routes>
+    </BrowserRouter>
   );
 }
 

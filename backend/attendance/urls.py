@@ -6,8 +6,8 @@ from .views import AttendanceViewSet # <-- Aquí está la importación correcta
 
 # El DefaultRouter genera automáticamente las rutas estándar y nuestro @action
 router = DefaultRouter()
-router.register(r'attendance', AttendanceViewSet, basename='attendance')
+router.register(r'attendances', AttendanceViewSet, basename='attendance')
 
 urlpatterns = [
     path('', include(router.urls)),
-]
+] 

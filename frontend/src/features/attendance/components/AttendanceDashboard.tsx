@@ -31,7 +31,7 @@ export const AttendanceDashboard = () => {
   const fetchStats = useCallback(async () => {
     setIsLoading(true);
     try {
-      const response = await apiClient.get<Stats>('/attendance/stats/');
+      const response = await apiClient.get<Stats>('/attendances/stats/');
       setStats(response.data);
     } catch (error) {
       console.error("Failed to fetch stats:", error);

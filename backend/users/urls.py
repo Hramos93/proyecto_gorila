@@ -1,11 +1,9 @@
 # backend/users/urls.py
-from django.urls import path, include
-from rest_framework.routers import DefaultRouter
-from .views import UserViewSet
-
-router = DefaultRouter()
-router.register(r'users', UserViewSet, basename='user')
+from django.urls import path
+from .views import LoginView, LogoutView, SessionView
 
 urlpatterns = [
-    path('', include(router.urls)),
+    path('login/', LoginView.as_view(), name='api_login'),
+    path('logout/', LogoutView.as_view(), name='api_logout'),
+    path('session/', SessionView.as_view(), name='api_session'),
 ]

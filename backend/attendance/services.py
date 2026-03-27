@@ -8,12 +8,19 @@ import os  # <-- NUEVO: Importamos os para manejar variables de entorno
 from fuzzywuzzy import process, fuzz
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from users.models import User
+import warnings
 
-# 1. Ruta al programa ejecutable
-pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
+# --- Configuración de Tesseract ---
+# Es una mala práctica tener rutas absolutas en el código.
+# Es mejor usar variables de entorno para que la app sea portable.
+# En un archivo .env en la raíz del backend, añade:
+# TESSERACT_CMD="C:\Program Files\Tesseract-OCR\tesseract.exe"
 
-# 2. NUEVO: Le decimos a Tesseract exactamente dónde están los idiomas
-os.environ['TESSDATA_PREFIX'] = r'C:\Program Files\Tesseract-OCR\tessdata\tessdata'
+# Usamos la variable de entorno o la ruta de instalación por defecto de Tesseract en Windows
+tesseract_path = os.getenv('TESSERACT_CMD', r'C:\Program Files\Tesseract-OCR\tesseract.exe')
+
+# Le decimos a pytesseract exactamente dónde está el motor OCR
+pytesseract.pytesseract.tesseract_cmd = tesseract_path
 
 
 class WhatsAppOCRService:

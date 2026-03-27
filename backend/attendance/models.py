@@ -1,6 +1,7 @@
 # backend/attendance/models.py
 
 from django.db import models
+from django.utils import timezone
 from django.conf import settings
 
 class Attendance(models.Model):
@@ -22,8 +23,9 @@ class Attendance(models.Model):
     )
     
     # Hora exacta en la que se registra la asistencia. 
-    # auto_now_add=True toma la hora del servidor en ese milisegundo.
-    timestamp = models.DateTimeField(auto_now_add=True, db_index=True)
+    # Usamos `default=timezone.now` en lugar de `auto_now_add=True`.
+    # Esto nos da más flexibilidad para registros masivos y back-dating.
+    timestamp = models.DateTimeField(default=timezone.now, db_index=True)
     
     # Cómo se registró la asistencia
     entry_method = models.CharField(

@@ -14,7 +14,17 @@ export default {
     extend: {
       // Agregamos colores personalizados para el CRM del gimnasio
       colors: {
-
+        // APLICADO: Paleta de colores para transmitir energía y profesionalismo.
+        brand: {
+          primary: '#0EA5E9', // sky-500 para acciones principales y foco
+          success: '#10B981', // green-500 para estados de éxito
+          warning: '#F59E0B', // amber-500 para advertencias
+          danger: '#EF4444',  // red-500 para errores o estados vencidos
+        },
+        // APLICADO: Colores semánticos para estados de UI (pagos, alertas, etc.)
+        success: '#10B981',
+        warning: '#F59E0B',
+        danger: '#EF4444',
       }
     },
   },

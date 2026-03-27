@@ -1,6 +1,7 @@
 # backend/attendance/serializers.py
 
 from django.contrib.auth import get_user_model
+from django.utils import timezone
 from rest_framework import serializers
 from .models import Attendance
 
@@ -21,12 +22,13 @@ class AttendanceSerializer(serializers.ModelSerializer):
             'id',
             'user',         # Campo de escritura, espera el ID del usuario al crear.
             'user_details', # Campo de solo lectura para mostrar en listados.
-            'timestamp',
+            'timestamp',    # Ahora es opcional. Si no se envía, se usa el default del modelo.
             'entry_method',
             'ocr_raw_text',
         ]
-        # Campos que no se deben poder editar a través de la API.
-        read_only_fields = ('id', 'timestamp', 'user_details')
+        # El timestamp ya no es read_only para permitir back-dating.
+        read_only_fields = ('id', 'user_details')
+        extra_kwargs = {'timestamp': {'required': False}}
 
 
 class BulkAttendanceSerializer(serializers.Serializer):

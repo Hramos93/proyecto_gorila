@@ -125,6 +125,12 @@ CORS_ALLOWED_ORIGINS = [
 # Acepta cookies y credenciales de autenticación del frontend
 CORS_ALLOW_CREDENTIALS = True
 
+# --- CSRF CONFIGURATION ---
+# Obligatorio en Django 4+ para peticiones POST (como subida de imágenes) cross-origin
+CSRF_TRUSTED_ORIGINS = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+]
 
 # --- REST FRAMEWORK CONFIG ---
 REST_FRAMEWORK = {
