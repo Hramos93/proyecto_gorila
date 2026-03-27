@@ -1,12 +1,16 @@
-/* frontend/src/index.css */
+@import "tailwindcss";
 
-/* Directivas estándar de Tailwind CSS v3. Son más compatibles. */
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+/* En v4, definimos los colores de Energy Box directamente aquí */
+@theme {
+  --color-brand-yellow: #FFD700;
+  --color-brand-purple: #4C1D95;
+  --color-brand-dark: #000000;
+  --color-brand-light: #F8F9FA;
+}
 
-/* Mantén tus estilos personalizados debajo */
+/* Tus estilos base adicionales */
 body {
     margin: 0;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    @apply bg-brand-light; /* Usamos el color de fondo que definimos arriba */
 }
