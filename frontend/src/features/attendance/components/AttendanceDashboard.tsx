@@ -2,27 +2,13 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Users, Zap, History, RefreshCw } from 'lucide-react';
 import { apiClient } from '../../../api/client';
 import type { Attendance } from '../types';
+import { StatCard } from '../../../components/ui/StatCard';
 
 interface Stats {
   total_today: number;
   active_now: number;
   recent: Attendance[];
 }
-
-const StatCard = ({ title, value, icon: Icon }: { title: string, value: string | number, icon: React.ElementType }) => (
-  <div className="bg-slate-800/50 border border-slate-700 p-4 rounded-lg">
-    <div className="flex items-center">
-      <div className="p-3 bg-slate-700 rounded-full">
-        <Icon className="w-5 h-5 text-yellow-400" />
-      </div>
-      <div className="ml-4">
-        <p className="text-sm font-medium text-slate-400">{title}</p>
-        <p className="text-2xl font-bold text-yellow-400">{value}</p>
-      </div>
-    </div>
-  </div>
-);
-
 
 export const AttendanceDashboard = () => {
   const [stats, setStats] = useState<Stats | null>(null);
@@ -32,6 +18,7 @@ export const AttendanceDashboard = () => {
     setIsLoading(true);
     try {
       const response = await apiClient.get<Stats>('/attendances/stats/');
+      // Verificamos que la respuesta tenga la estructura esperada
       setStats(response.data);
     } catch (error) {
       console.error("Failed to fetch stats:", error);
@@ -42,7 +29,7 @@ export const AttendanceDashboard = () => {
 
   useEffect(() => {
     fetchStats();
-    const interval = setInterval(fetchStats, 60000); // Refresh every minute
+    const interval = setInterval(fetchStats, 60000);
     return () => clearInterval(interval);
   }, [fetchStats]);
 
@@ -56,14 +43,18 @@ export const AttendanceDashboard = () => {
       </div>
 
       <div className="grid grid-cols-2 gap-4">
-        <StatCard title="Total Hoy" value={stats?.total_today ?? '...'} icon={Users} />
-        <StatCard title="Activos Ahora" value={stats?.active_now ?? '...'} icon={Zap} />
+        <StatCard title="Total Hoy" value={stats?.total_today ?? 0} icon={Users} />
+        <StatCard title="Activos Ahora" value={stats?.active_now ?? 0} icon={Zap} />
       </div>
 
       <div className="flex-grow overflow-hidden">
-        <h3 className="text-lg font-semibold mb-3 flex items-center"><History className="w-5 h-5 mr-2 text-yellow-400"/>Últimos Registros</h3>
+        <h3 className="text-lg font-semibold mb-3 flex items-center">
+          <History className="w-5 h-5 mr-2 text-yellow-400"/>
+          Últimos Registros
+        </h3>
         <ul className="space-y-2 pr-2 overflow-y-auto h-full">
-          {stats?.recent.map(att => (
+          {/* CAMBIO CLAVE: Añadimos una verificación extra y un fallback [] */}
+          {(stats?.recent || []).map(att => (
             <li key={att.id} className="flex justify-between items-center bg-slate-900/50 p-3 rounded-lg border border-slate-700">
               <div>
                 <p className="text-sm font-semibold text-slate-100">{att.user_details}</p>
@@ -74,10 +65,13 @@ export const AttendanceDashboard = () => {
               </span>
             </li>
           ))}
+          {!isLoading && (!stats?.recent || stats.recent.length === 0) && (
+            <p className="text-sm text-slate-500 italic text-center py-4">Sin registros recientes</p>
+          )}
         </ul>
       </div>
       
-      <div className="flex-shrink-0 pt-4 text-center text-xs text-gray-500">
+      <div className="flex-shrink-0 pt-4 text-center text-[10px] text-gray-500">
         <p>Energy Box C.A. - RIF: J-504118702</p>
       </div>
     </div>

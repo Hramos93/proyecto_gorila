@@ -1,34 +1,30 @@
 # backend/customers/views.py
-from rest_framework import viewsets, mixins
-from rest_framework.permissions import IsAdminUser
+from django.db.models import Max, Value, Case, When, CharField
+from django.utils import timezone
+from rest_framework import viewsets
 from users.models import User
-from users.serializers import UserBasicSerializer
+from .serializers import CustomerSerializer
+from rest_framework.permissions import IsAuthenticated
 
-class CustomerViewSet(mixins.ListModelMixin,
-                      mixins.RetrieveModelMixin,
-                      viewsets.GenericViewSet):
+class CustomerViewSet(viewsets.ReadOnlyModelViewSet):
     """
-    Endpoint de solo lectura para listar y ver detalles de clientes.
-    - `GET /api/customers/`: Lista todos los usuarios con el rol de CLIENTE.
-    - `GET /api/customers/{id}/`: Obtiene los detalles de un cliente específico.
-    
-    Este endpoint es ideal para alimentar la tabla maestra de clientes en el frontend.
-    Solo los administradores pueden acceder a esta lista.
-    
-    NUEVO: Anota cada cliente con su 'payment_status' calculado.
+    Vista optimizada para la gestión de clientes en Energy Box.
     """
-    serializer_class = UserBasicSerializer
-    permission_classes = [IsAdminUser] # ¡Importante! Proteger la lista de clientes.
+    serializer_class = CustomerSerializer
+    # REPARACIÓN: Usamos IsAuthenticated para que reconozca a tu usuario Administrador
+    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        """
-        Filtra el queryset para devolver solo usuarios que son clientes y están activos.
-        
-        Añade una anotación 'payment_status' a cada usuario basada en su último pago.
-        La lógica es:
-        - PAID: El último pago está 'COMPLETED'.
-        - OVERDUE: El último pago está 'PENDING' y su 'due_date' ya pasó.
-        - PENDING: El último pago está 'PENDING' y su 'due_date' es futura.
-        - PENDING: Si no tiene pagos registrados.
-        """
-        return User.objects.filter(role=User.Role.CLIENT, is_active=True).order_by('first_name', 'last_name')
+        today = timezone.now().date()
+        # Filtramos solo los usuarios que son CLIENTES para la tabla
+        return User.objects.filter(role='CLIENT', is_active=True).annotate(
+            last_attendance_annotated=Max('attendances__timestamp'),
+            latest_payment_end_date=Max('payments__end_date')
+        ).annotate(
+            payment_status_db=Case(
+                When(latest_payment_end_date__gte=today, then=Value('PAID')),
+                When(latest_payment_end_date__lt=today, then=Value('OVERDUE')),
+                default=Value('PENDING'),
+                output_field=CharField(),
+            )
+        ).order_by('first_name')

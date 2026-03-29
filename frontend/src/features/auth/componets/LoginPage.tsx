@@ -1,26 +1,27 @@
 import React, { useState } from 'react';
 import toast from 'react-hot-toast';
-import { login } from '../services/authService';
+import { useAuth } from '../../../context/AuthContext'; // Importamos el hook
+import { useNavigate } from 'react-router-dom';
 
 export const LoginPage: React.FC = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  const { login } = useAuth(); // Obtenemos la función login del contexto
+  const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
+    setIsSubmitting(true);
     try {
       await login({ username, password });
-      toast.success('¡Bienvenido!');
-      // Recargamos la página para que App.tsx pueda detectar la nueva sesión.
-      // Una solución más avanzada usaría un estado global (Context, Redux, etc.).
-      window.location.href = '/';
+      toast.success('¡Bienvenido a Energy Box!');
+      navigate('/'); // Redirección limpia sin recargar la página
     } catch (error) {
       toast.error('Credenciales incorrectas. Inténtalo de nuevo.');
-      console.error(error);
     } finally {
-      setIsLoading(false);
+      setIsSubmitting(false);
     }
   };
 
@@ -60,10 +61,14 @@ export const LoginPage: React.FC = () => {
             />
           </div>
           <div>
-            <button type="submit" disabled={isLoading} className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-zinc-900 bg-yellow-400 hover:bg-yellow-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500 disabled:bg-zinc-600 disabled:cursor-not-allowed">
-              {isLoading ? 'Ingresando...' : 'Ingresar'}
-            </button>
-          </div>
+          <button 
+            type="submit" 
+            disabled={isSubmitting} // CAMBIADO: antes decía isLoading
+            className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-zinc-900 bg-yellow-400 hover:bg-yellow-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500 disabled:bg-zinc-600 disabled:cursor-not-allowed"
+          >
+            {isSubmitting ? 'Ingresando...' : 'Ingresar'} // CAMBIADO: antes decía isLoading
+          </button>
+        </div>
         </form>
       </div>
     </div>

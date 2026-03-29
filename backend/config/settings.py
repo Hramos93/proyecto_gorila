@@ -4,17 +4,13 @@ import os
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
-
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-m=d5r&amp;d@+@o%&amp;^p6q3!z@d*#f$b@p(c-^$-)f$v&amp;c*6@d'
+SECRET_KEY = 'django-insecure-m=d5r&d@+@o%&^p6q3!z@d*#f$b@p(c-^$-)f$v&c*6@d'
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
 ALLOWED_HOSTS = []
-
 
 # Application definition
 
@@ -26,19 +22,19 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
 
-    # --- Third Party Apps (Librerías Externas) ---
-    'rest_framework',       # Toolkit para construir la API
-    'corsheaders',          # Permite que React hable con Django
+    # --- Third Party Apps ---
+    'rest_framework',       
+    'corsheaders',          
 
-    # --- Energy Box Apps (Nuestros Módulos) ---
-    'users.apps.UsersConfig',           # Gestión de usuarios
-    'attendance.apps.AttendanceConfig', # Gestión de asistencia
-    'payments.apps.PaymentsConfig',     # Gestión de pagos
-    'customers.apps.CustomersConfig',   # App de Clientes (Nueva)
+    # --- Energy Box Apps ---
+    'users.apps.UsersConfig',           
+    'attendance.apps.AttendanceConfig', 
+    'payments.apps.PaymentsConfig',     
+    'customers.apps.CustomersConfig',   
 ]
 
 MIDDLEWARE = [
-    'corsheaders.middleware.CorsMiddleware', # <--- OBLIGATORIO AL INICIO
+    'corsheaders.middleware.CorsMiddleware', 
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -68,10 +64,7 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'config.wsgi.application'
 
-
 # --- DATABASE ---
-# Usamos SQLite por defecto para desarrollo rápido en Windows.
-# En producción cambiaremos esto a PostgreSQL.
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
@@ -80,8 +73,6 @@ DATABASES = {
 }
 
 # Password validation
-# https://docs.djangoproject.com/en/5.0/ref/settings/#auth-password-validators
-
 AUTH_PASSWORD_VALIDATORS = [
     {
         'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
@@ -97,36 +88,27 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+# --- Internationalization ---
+# MEJORA: Idioma cambiado a español de Venezuela para mensajes de error de la API.
+LANGUAGE_CODE = 'es-ve'
 
-# Internationalization
-# https://docs.djangoproject.com/en/5.0/topics/i18n/
-
-LANGUAGE_CODE = 'en-us'
-
-TIME_ZONE = 'UTC'
+# MEJORA: Huso horario ajustado a Caracas para que la asistencia y pagos coincidan con la realidad local.
+TIME_ZONE = 'America/Caracas'
 
 USE_I18N = True
-
 USE_TZ = True
 
-
 # Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/5.0/howto/static-files/
-
 STATIC_URL = 'static/'
 
-
 # --- CORS CONFIGURATION ---
-# Lista blanca de orígenes permitidos (El puerto de Vite suele ser 5173)
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
     "http://127.0.0.1:5173",
 ]
-# Acepta cookies y credenciales de autenticación del frontend
 CORS_ALLOW_CREDENTIALS = True
 
 # --- CSRF CONFIGURATION ---
-# Obligatorio en Django 4+ para peticiones POST (como subida de imágenes) cross-origin
 CSRF_TRUSTED_ORIGINS = [
     "http://localhost:5173",
     "http://127.0.0.1:5173",
@@ -134,30 +116,19 @@ CSRF_TRUSTED_ORIGINS = [
 
 # --- REST FRAMEWORK CONFIG ---
 REST_FRAMEWORK = {
-    # Ahora, todos los endpoints requerirán autenticación por defecto.
-    # Los endpoints públicos deben sobreescribir esto con `permission_classes = [AllowAny]`.
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',
     ],
-    # Le decimos a DRF que el método de autenticación principal es la sesión de Django.
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework.authentication.SessionAuthentication',
     ],
 }
 
 # --- MEDIA FILES (Para capturas de WhatsApp y Pagos) ---
-# URL pública para acceder a las imágenes
 MEDIA_URL = '/media/'
-# Ruta física en tu disco duro Windows donde se guardan
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
-
-# Default primary key field type
-# https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# Le decimos a Django que nuestro modelo oficial de usuarios es el que está en la app 'users'
-AUTH_USER_MODEL = 'users.User'
-
-# Le decimos a Django que nuestro modelo oficial de usuarios es el que está en la app 'users'
+# MEJORA: Se eliminó la duplicación de esta línea y se mantiene como única referencia.
 AUTH_USER_MODEL = 'users.User'

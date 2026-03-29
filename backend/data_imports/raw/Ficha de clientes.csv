@@ -1,3 +1,21 @@
-Marca temporal,Nombre,Apellido,Cédula de Identidad,Número de Teléfono Principal,Número de Teléfono del Contacto de Emergencia,Nombre Completo del Contacto de Emergencia,Dirección de Residencia Completa,"¿Tiene alguna lesión, condición médica o alergia que debamos conocer?","Si respondió 'Sí' en la pregunta anterior, por favor especifique."
-23/02/2024 18:25:21,Juan,Perez,V12345678,04141234567,04127654321,Maria Perez,"Av. Principal, Caracas",Sí,Alergia al maní.
-24/02/2024 10:10:10,Ana,Gomez,V87654321,04249876543,,,"Urb. Las Mercedes, Caracas",No,
+Marca temporal,Nombre,Apellido,Cédula de Identidad ,Número de Teléfono Principal,Número de Teléfono del Contacto de Emergencia ,Nombre Completo del Contacto de Emergencia,Dirección de Residencia Completa,"¿Tiene alguna lesión o condición de salud especial (crónica, alergias, medicación)?","Si respondió 'Sí' a la pregunta anterior, por favor, describa brevemente su condición o lesión especial."
+27/2/2026 16:58:38,Yanelys ,Silva,19407266,04127300257,04127300257,Yanelys ,Av. Fuerzas armadas xx,No,
+27/2/2026 19:38:43,Mario,Garcia,15797926,04124324665,04127365780,Luz lopez,27 febrero bloque 15 apto piso 14 apto 1402 Guarenas Edo Miranda ,No,
+27/2/2026 19:45:58,Mafer ,Mayorca Fernández ,14494320,04125550992,4242770644,Diorelys Herrera ,Urb Menca de Leones Bloque 15 piso 14 apto 14-06 guarenas ,No,
+27/2/2026 19:47:59,Luz ,López ,15427651,04127365780,04124324665,Mario García ,27 de febrero antigua menca de Leoni bloque 15 apto 14.02 guarenas ,Sí,"alergia al pividine , a la vitamina B12"
+27/2/2026 19:48:51,Ydalmy ,Rodríguez ,13692519,04241907940,,,,No,
+27/2/2026 19:50:28,Gabriela ,Acosta ,24811084,04127020948,04122323811,Ana acosta ,Carretera nacional Guarenas Guatire /  Parque hábitat el ingenio  torre 7 Piso 1 apartamento 101,No,
+27/2/2026 19:50:47,Dayerlin,Ojeda,25787079,04125599145,04125750535,Miguel Alejandro mora Sosa ,Guatire Solanas del Ávila etapa 1,No, No
+27/2/2026 19:51:22,Ezekiel ,Silva,29.595773,04129387996,04127365780,Luzneyda lopez,"Guarenas, 27 de febrero",No,
+27/2/2026 19:52:32,Paola,Gonzalez ,28006232,04126398236,04164261531,Rosiris Pernia,Urbanización el Torreón etapa 2,Sí,Sufro de las rodillas 
+27/2/2026 19:53:21,Karla,Marquez,25990945,04127060665,04128240036,Rigoberto Marquez,"Guarenas sector 01 de trapichito vereda 05 casa las marquesitas, punto de referencia el saime
+",No,
+27/2/2026 19:53:42,Elimar ,Velásquez ,19155840,04167135857,04127230929,Wilfredo Valera ,"Urbanización el ingenio, conjunto residencial las lomas edif B6 apto b6-53 guatire ",No,
+27/2/2026 20:03:20,Niurka,Sosa,10093461,04242254616,04241945310,Daniel camilo mora sosa,Guarenas 27 de febrero bloque 15 piso 13 apto 1305,No,
+27/2/2026 20:08:49,Niurka ,Sosa ,10093461,04242254616,04241945310,Daniel camilo Sosa mora ,Guarenas 27 de febrero bloque 15 piso 13 apto 1305,No,
+27/2/2026 20:22:03,Betzabeth ,Medina,17652786,04242089648,04145403940,Brenda Medina,"Av. principal Ruiz Pineda, Piñal 2 escalera  2, casa 4",Sí,Tratamiento inmunológico con Metrotexate de 5 MG semanal. Control de estenosis traqueal y vías respiratorias 
+1/3/2026 19:52:31,Glexi,Barboza,26022402,04141094648,04242395456,Francis ,Av ppal Ruiz Pineda ,No,
+1/3/2026 20:13:21,Marisol,Pastran,18602357,04141279125,04143697063,Jesus Pastran ,"Urb. 27 de febrero (menca) bloque 16, piso 4, apto 402",No,
+1/3/2026 20:32:48,Daliana ,Cordero,30045221,04262154504,04167094500,Sujeis Ponce ,Guarenas menca bloq 18 piso 07 apto 0701,No,
+1/3/2026 20:54:20,Nidia,Rangel,6369670,04127066520,04129644768,Bárbara lopez,Edf 62 Edf 61 piso 5 apto 502 Guarenas eso miranda,No,
+6/3/2026 20:48:03,Marisol,Alviarez ,10510744,4148822700,,,Gueime,No,

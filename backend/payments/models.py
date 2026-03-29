@@ -1,73 +1,58 @@
+# backend/payments/models.py
+
 from django.db import models
 from django.conf import settings
 from django.utils import timezone
 from datetime import timedelta
 
 class Plan(models.Model):
-    """Define un tipo de membresía, como 'Mensual', 'Trimestral', etc."""
-    name = models.CharField(max_length=100, unique=True, verbose_name="Nombre del Plan")
-    duration_days = models.IntegerField(verbose_name="Duración en días")
-    price = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Precio")
-    is_active = models.BooleanField(default=True, verbose_name="¿Está activo?")
+    """
+    Define los planes de entrenamiento (Mensual, Trimestral, etc.)
+    """
+    name = models.CharField(max_length=100, help_text="Ej: Mensualidad Regular")
+    price = models.DecimalField(max_digits=10, decimal_places=2, help_text="Precio en USD")
+    duration_days = models.IntegerField(default=30, help_text="Días de duración")
+    is_active = models.BooleanField(default=True)
 
     class Meta:
-        verbose_name = "Plan de Membresía"
-        verbose_name_plural = "Planes de Membresía"
-        ordering = ['duration_days']
+        verbose_name = 'Plan de Entrenamiento'
+        verbose_name_plural = 'Planes de Entrenamiento'
 
     def __str__(self):
-        return self.name
+        return f"{self.name} (${self.price})"
 
 class Payment(models.Model):
-    """Registra un pago realizado por un usuario para un plan específico."""
-    
-    class PaymentMethod(models.TextChoices):
-        CASH = 'CASH', 'Efectivo'
-        TRANSFER = 'TRANSFER', 'Transferencia'
-        CARD = 'CARD', 'Tarjeta'
-        MOBILE = 'MOBILE_PAY', 'Pago Móvil'
+    """
+    Registro de pagos vinculados a un Plan.
+    """
+    class Currency(models.TextChoices):
+        USD = 'USD', 'Dólares ($)'
+        VED = 'VED', 'Bolívares (Bs)'
 
-    user = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE,
-        related_name='payments',
-        verbose_name="Usuario"
-    )
-    plan = models.ForeignKey(
-        Plan,
-        on_delete=models.SET_NULL,
-        null=True,
-        related_name='payments',
-        verbose_name="Plan"
-    )
-    payment_date = models.DateTimeField(default=timezone.now, verbose_name="Fecha de Pago")
-    start_date = models.DateField(verbose_name="Fecha de Inicio de Cobertura")
-    end_date = models.DateField(verbose_name="Fecha de Fin de Cobertura")
+    class Method(models.TextChoices):
+        CASH = 'CASH', 'Efectivo'
+        PAGO_MOVIL = 'PAGO_MOVIL', 'Pago Móvil'
+        ZELLE = 'ZELLE', 'Zelle'
+
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='payments')
+    # MEJORA: El pago ahora se vincula a un plan específico
+    plan = models.ForeignKey(Plan, on_delete=models.SET_NULL, null=True, blank=True)
     
-    amount_paid = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Monto Pagado")
-    payment_method = models.CharField(
-        max_length=12,
-        choices=PaymentMethod.choices,
-        default=PaymentMethod.CASH,
-        verbose_name="Método de Pago"
-    )
-    notes = models.TextField(blank=True, null=True, verbose_name="Notas Adicionales")
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    currency = models.CharField(max_length=3, choices=Currency.choices, default=Currency.USD)
+    exchange_rate = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    
+    payment_date = models.DateField(default=timezone.now)
+    end_date = models.DateField(help_text="Fecha de vencimiento.")
+    
+    method = models.CharField(max_length=20, choices=Method.choices, default=Method.CASH)
+    reference = models.CharField(max_length=50, blank=True, null=True)
+    receipt_image = models.ImageField(upload_to='payments/receipts/', null=True, blank=True)
 
     class Meta:
-        verbose_name = "Pago"
-        verbose_name_plural = "Pagos"
+        verbose_name = 'Pago'
+        verbose_name_plural = 'Pagos'
         ordering = ['-payment_date']
 
-    def save(self, *args, **kwargs):
-        # Si la fecha de inicio no está definida, usar la fecha del pago
-        if not self.start_date:
-            self.start_date = self.payment_date.date()
-        
-        # Calcular la fecha de fin automáticamente si se tiene un plan
-        if self.plan and not self.end_date:
-            self.end_date = self.start_date + timedelta(days=self.plan.duration_days)
-            
-        super().save(*args, **kwargs)
-
     def __str__(self):
-        return f"Pago de {self.user} - {self.plan.name if self.plan else 'Plan Eliminado'}"
+        return f"{self.user.internal_code} - {self.amount}{self.currency}"
