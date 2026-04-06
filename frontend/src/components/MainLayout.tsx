@@ -1,21 +1,22 @@
 import React from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Users, Kanban, LogOut, Dumbbell } from 'lucide-react';
+import { LayoutDashboard, Users, Kanban, LogOut, Dumbbell, CreditCard } from 'lucide-react'; // <-- AÑADIDO CreditCard
 import { useAuth } from '../context/AuthContext';
 
 export const MainLayout = () => {
   const { logout, user } = useAuth();
   const location = useLocation();
 
+  // AÑADIDA RUTA DE FACTURACIÓN
   const navigation = [
     { name: 'Portal OCR', href: '/', icon: LayoutDashboard },
     { name: 'Clientes', href: '/customers', icon: Users },
+    { name: 'Facturación', href: '/billing', icon: CreditCard }, // <-- NUEVA PESTAÑA
     { name: 'Tablero Kanban', href: '/board', icon: Kanban },
   ];
 
   return (
     <div className="min-h-screen bg-zinc-950 flex flex-col">
-      {/* Navbar Superior */}
       <nav className="bg-zinc-900 border-b border-zinc-800 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
@@ -64,12 +65,10 @@ export const MainLayout = () => {
         </div>
       </nav>
 
-      {/* Contenido de la Página */}
       <main className="flex-grow">
         <Outlet />
       </main>
 
-      {/* Footer Minimalista */}
       <footer className="bg-zinc-900 border-t border-zinc-800 py-4">
         <p className="text-center text-[10px] text-zinc-600 uppercase tracking-widest">
           Energy Box C.A. - Control de Gestión v1.0

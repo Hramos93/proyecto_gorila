@@ -1,4 +1,5 @@
 from pathlib import Path
+from datetime import timedelta
 import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -23,8 +24,10 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
 
     # --- Third Party Apps ---
-    'rest_framework',       
-    'corsheaders',          
+    'rest_framework',
+    'rest_framework_simplejwt.token_blacklist',
+    'corsheaders',
+    'django_extensions',
 
     # --- Energy Box Apps ---
     'users.apps.UsersConfig',           
@@ -120,8 +123,20 @@ REST_FRAMEWORK = {
         'rest_framework.permissions.IsAuthenticated',
     ],
     'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework.authentication.SessionAuthentication',
+        # Inyectamos JWT como método principal de autenticación
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
     ],
+}
+
+# --- SIMPLE JWT CONFIGURATION ---
+
+
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(hours=12), # El token dura 12 horas (un turno de trabajo)
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),  # Puede refrescar sesión por 7 días
+    'ROTATE_REFRESH_TOKENS': True,
+    'BLACKLIST_AFTER_ROTATION': True,
+    'AUTH_HEADER_TYPES': ('Bearer',),
 }
 
 # --- MEDIA FILES (Para capturas de WhatsApp y Pagos) ---

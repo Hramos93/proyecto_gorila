@@ -1,7 +1,6 @@
 # backend/users/models.py
-
 from django.contrib.auth.models import AbstractUser
-from django.db import models
+from django.db import models, transaction # Importamos transaction
 from django.utils.text import slugify
 
 class User(AbstractUser):
@@ -49,6 +48,23 @@ class User(AbstractUser):
     # --- BÚSQUEDA Y NORMALIZACIÓN ---
     search_name = models.CharField(max_length=255, db_index=True, blank=True)
 
+    #--- ULTIMA ASISTENCIA
+    last_attendance_date = models.DateTimeField(null=True, blank=True, db_index=True)
+
+
+    #-- contador de clase: 
+
+    remaining_classes = models.IntegerField(default=0)
+    membership_status = models.CharField(
+    max_length=20, 
+    choices=[('ACTIVE', 'Activo'), ('EXPIRED', 'Vencido'), ('DEBTOR', 'Moroso')],
+    default='EXPIRED'
+    )
+    balance = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+
+    def has_available_classes(self):
+        return self.remaining_classes > 0
+
     class Meta:
         verbose_name = 'Usuario'
         verbose_name_plural = 'Usuarios'
@@ -57,25 +73,39 @@ class User(AbstractUser):
 
     def save(self, *args, **kwargs):
         """
-        Lógica personalizada antes de guardar en la DB.
+        Lógica con bloqueo de concurrencia para generación de códigos.
         """
-        # Normalizamos el nombre de búsqueda para que el OCR sea más preciso.
+        # 1. Normalización de nombre (tu lógica actual)
         full_name = f"{self.first_name} {self.last_name}"
         self.search_name = slugify(full_name).replace('-', ' ')
         
-        # Generación automática de internal_code si es cliente y no tiene uno.
+        # 2. Generación de código con Bloqueo de Fila (Select for Update)
         if self.role == self.Role.CLIENT and not self.internal_code:
-            last_client = User.objects.filter(role=self.Role.CLIENT).order_by('-id').first()
-            if last_client and last_client.internal_code and last_client.internal_code.startswith('C'):
-                try:
-                    num = int(last_client.internal_code[1:]) + 1
-                    self.internal_code = f"C{num:04d}"
-                except ValueError:
-                    self.internal_code = "C0001"
-            else:
-                self.internal_code = "C0001"
-                
-        super().save(*args, **kwargs)
+            try:
+                with transaction.atomic():
+                    # Bloqueamos el registro del último cliente para que nadie más lo lea 
+                    # hasta que nosotros terminemos de guardar este.
+                    last_client = User.objects.select_for_update().filter(
+                        role=self.Role.CLIENT, 
+                        internal_code__startswith='C'
+                    ).order_by('-id').first()
+
+                    if last_client and last_client.internal_code:
+                        try:
+                            num = int(last_client.internal_code[1:]) + 1
+                            self.internal_code = f"C{num:04d}"
+                        except ValueError:
+                            self.internal_code = "C0001"
+                    else:
+                        self.internal_code = "C0001"
+                    
+                    super().save(*args, **kwargs)
+            except Exception:
+                # Si algo falla en la transacción, dejamos que el error suba
+                raise
+        else:
+            # Si no es cliente o ya tiene código, guardado normal
+            super().save(*args, **kwargs)
 
     def __str__(self):
         return f"{self.internal_code or 'S/C'} - {self.first_name} {self.last_name}"

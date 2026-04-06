@@ -2,6 +2,24 @@
 
 from rest_framework import serializers
 from .models import User
+# Añade este import en la parte superior
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+
+# Añade esta clase al final del archivo
+class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
+    """
+    Personaliza la respuesta del Login JWT para incluir los datos del usuario,
+    manteniendo la compatibilidad con nuestro frontend actual en React.
+    """
+    def validate(self, attrs):
+        data = super().validate(attrs)
+        
+        # Inyectamos el usuario usando tu serializador existente
+        serializer = UserBasicSerializer(self.user, context=self.context)
+        data['user'] = serializer.data
+        
+        # Eliminamos la necesidad de devolver csrfToken
+        return data
 
 class UserBasicSerializer(serializers.ModelSerializer):
     """
@@ -58,3 +76,19 @@ class UserCreateSerializer(serializers.ModelSerializer):
             **validated_data
         )
         return user
+    
+# Añade esta clase al final del archivo
+class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
+    """
+    Personaliza la respuesta del Login JWT para incluir los datos del usuario,
+    manteniendo la compatibilidad con nuestro frontend actual en React.
+    """
+    def validate(self, attrs):
+        data = super().validate(attrs)
+        
+        # Inyectamos el usuario usando tu serializador existente
+        serializer = UserBasicSerializer(self.user, context=self.context)
+        data['user'] = serializer.data
+        
+        # Eliminamos la necesidad de devolver csrfToken
+        return data

@@ -8,6 +8,10 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from .models import User
 from .serializers import UserSerializer, UserCreateSerializer, UserBasicSerializer
+# Añade este import arriba
+from rest_framework_simplejwt.views import TokenObtainPairView
+from .serializers import CustomTokenObtainPairSerializer
+
 
 class UserViewSet(viewsets.ModelViewSet):
     """
@@ -32,38 +36,8 @@ class UserViewSet(viewsets.ModelViewSet):
         serializer = UserSerializer(request.user, context={'request': request})
         return Response(serializer.data)
 
-class LoginView(views.APIView):
-    """
-    Vista para manejar el inicio de sesión.
-    Se desactiva la autenticación por sesión para evitar el bloqueo CSRF 
-    durante el primer intento de login (El problema del Huevo y la Gallina).
-    """
-    permission_classes = [AllowAny]
-    authentication_classes = [] # <--- ESTA ES LA MAGIA QUE ARREGLA EL ERROR 403
-
-    def post(self, request):
-        username = request.data.get('username')
-        password = request.data.get('password')
-        
-        # Authenticate verifica las credenciales en la base de datos
-        user = authenticate(request, username=username, password=password)
-        
-        if user:
-            # login() crea la sesión en el servidor e inyecta las cookies 
-            # (sessionid y csrftoken) en la respuesta para el navegador.
-            login(request, user)
-            
-            serializer = UserBasicSerializer(user, context={'request': request})
-            return Response({
-                "detail": "Inicio de sesión exitoso.",
-                "user": serializer.data,
-                "csrfToken": get_token(request) 
-            })
-        
-        return Response(
-            {"detail": "Credenciales inválidas."}, 
-            status=status.HTTP_401_UNAUTHORIZED
-        )
+class CustomTokenObtainPairView(TokenObtainPairView):
+    serializer_class = CustomTokenObtainPairSerializer
 
 class LogoutView(views.APIView):
     """

@@ -9,14 +9,17 @@ export interface User {
   internal_code: string | null;
   first_name: string;
   last_name: string;
-  full_name?: string; // Algunos endpoints devuelven el nombre unido
+  full_name?: string; 
   document_type: DocumentType;
   document_number: string;
-  dni?: string; // Alias común para document_number en algunos componentes
+  dni?: string; 
   role: UserRole;
   avatar_url?: string | null;
   phone?: string | null;
   is_active: boolean;
   payment_status: PaymentStatus;
   last_attendance_date?: string | null;
+  // NUEVOS CAMPOS FASE 4
+  remaining_classes: number;
+  latest_payment_end_date?: string | null;
 }

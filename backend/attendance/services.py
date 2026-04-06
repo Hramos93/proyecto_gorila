@@ -1,11 +1,11 @@
 # backend/attendance/services.py
-
 import cv2
 import numpy as np
 import pytesseract
 import re
 import os
-from fuzzywuzzy import process, fuzz
+# REEMPLAZO: Usamos rapidfuzz en lugar de fuzzywuzzy
+from rapidfuzz import process, fuzz 
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from users.models import User
 from django.conf import settings
@@ -76,36 +76,35 @@ class WhatsAppOCRService:
 
     def _match_with_database(self):
         """
-        Paso 3: Búsqueda Difusa (Fuzzy Matching) usando el índice search_name.
+        Versión optimizada con RapidFuzz para Energy Box.
         """
-        # MEJORA: Solo buscamos clientes activos para optimizar memoria.
-        active_clients = User.objects.filter(role='CLIENT', is_active=True).only('id', 'first_name', 'last_name', 'search_name')
+        active_clients = User.objects.filter(role='CLIENT', is_active=True)
         
-        if not active_clients.exists():
-            self.unmatched_lines = self.extracted_text
-            return
-
-        # MEJORA: Usamos search_name (campo normalizado en el Paso 3) para el matching.
-        # Esto ignora tildes y caracteres especiales, haciendo el sistema mucho más robusto.
+        # Mapeo para búsqueda rápida
         client_dict = {user.id: user.search_name for user in active_clients}
         client_display_names = {user.id: f"{user.first_name} {user.last_name}" for user in active_clients}
         search_choices = list(client_dict.values())
 
         for detected_text in self.extracted_text:
-            # Normalizamos el texto detectado para que coincida con search_name
             normalized_detected = detected_text.lower().replace('á', 'a').replace('é', 'e').replace('í', 'i').replace('ó', 'o').replace('ú', 'u')
             
-            match = process.extractOne(normalized_detected, search_choices, scorer=fuzz.token_set_ratio)
+            # RapidFuzz usa una API casi idéntica
+            match = process.extractOne(
+                normalized_detected, 
+                search_choices, 
+                scorer=fuzz.token_set_ratio
+            )
             
-            # Umbral de confianza del 75%
+            # El objeto match en rapidfuzz es (string, score, index)
             if match and match[1] >= 75:
-                # Buscamos el ID del usuario que corresponde a ese search_name
-                user_id = next(uid for uid, s_name in client_dict.items() if s_name == match[0])
+                matched_name_in_db = match[0]
+                user_id = next(uid for uid, s_name in client_dict.items() if s_name == matched_name_in_db)
+                
                 self.matched_users.append({
                     "user_id": user_id,
                     "detected_name": detected_text, 
                     "matched_name": client_display_names[user_id], 
-                    "confidence": match[1]
+                    "confidence": round(match[1], 2)
                 })
             else:
                 self.unmatched_lines.append(detected_text)

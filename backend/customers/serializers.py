@@ -1,14 +1,15 @@
 # backend/customers/serializers.py
-
 from rest_framework import serializers
 from users.models import User
 
-# backend/customers/serializers.py
 class CustomerSerializer(serializers.ModelSerializer):
-    # Mantenemos dni para compatibilidad, pero agregamos los campos originales
+    """
+    Serializer completo para el detalle y lista de clientes.
+    """
     dni = serializers.CharField(source='document_number', read_only=True)
     payment_status = serializers.CharField(source='payment_status_db', read_only=True)
     last_attendance = serializers.DateTimeField(source='last_attendance_annotated', read_only=True)
+    latest_payment_end_date = serializers.DateField(read_only=True)
 
     class Meta:
         model = User
@@ -17,19 +18,19 @@ class CustomerSerializer(serializers.ModelSerializer):
             'first_name', 
             'last_name', 
             'dni', 
-            'document_type',   # AGREGADO: Para que aparezca la V o J
-            'document_number', # AGREGADO: Para que el filtro del frontend funcione
-            'phone_number', 
+            'document_type',
+            'document_number', 
+            'phone_number', # <--- CORREGIDO: Cambiado de 'phone' a 'phone_number'
             'internal_code',
             'last_attendance', 
-            'payment_status'
+            'payment_status',
+            'remaining_classes', 
+            'latest_payment_end_date'
         ]
-
 
 class CustomerBoardCardSerializer(serializers.ModelSerializer):
     """
     Serializer optimizado para la vista de tablero (Kanban).
-    Muestra solo la información necesaria para las tarjetas.
     """
     payment_status = serializers.CharField(source='payment_status_db', read_only=True)
 
@@ -40,5 +41,6 @@ class CustomerBoardCardSerializer(serializers.ModelSerializer):
             'first_name', 
             'last_name', 
             'internal_code', 
-            'payment_status'
+            'payment_status',
+            'remaining_classes'
         ]

@@ -6,9 +6,12 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.permissions import IsAuthenticated, AllowAny
-from .models import Attendance
-from .serializers import AttendanceSerializer, BulkAttendanceSerializer
+
+from .models import Attendance, TrainingClass
+from .serializers import AttendanceSerializer, BulkAttendanceSerializer, TrainingClassSerializer
 from .services import WhatsAppOCRService
+
+from users.models import User 
 
 class AttendanceViewSet(viewsets.ModelViewSet):
     """
@@ -18,15 +21,10 @@ class AttendanceViewSet(viewsets.ModelViewSet):
     queryset = Attendance.objects.all().order_by('-timestamp').select_related('user')
     serializer_class = AttendanceSerializer
     
-    # TEMPORAL: Permitir acceso sin login mientras terminamos el frontend
     permission_classes = [AllowAny]
-    authentication_classes = [] # TEMPORAL: Desactiva la validación de Sesión/CSRF para evitar el Error 403
+    authentication_classes = [] 
 
     def get_queryset(self):
-        """
-        Optionally restricts the returned attendances to a given user,
-        by filtering against a `user_id` query parameter in the URL.
-        """
         queryset = super().get_queryset()
         user_id = self.request.query_params.get('user_id')
         if user_id is not None:
@@ -35,9 +33,6 @@ class AttendanceViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['get'])
     def stats(self, request):
-        """
-        Devuelve estadísticas de asistencia en tiempo real.
-        """
         now = timezone.now()
         start_of_day = now.replace(hour=0, minute=0, second=0, microsecond=0)
         two_hours_ago = now - timedelta(hours=2)
@@ -55,21 +50,55 @@ class AttendanceViewSet(viewsets.ModelViewSet):
         })
 
     def create(self, request, *args, **kwargs):
-        """
-        Registro de asistencia manual estándar.
-        """
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
+    @action(detail=False, methods=['POST'], url_path='manual-checkin')
+    def manual_checkin(self, request):
+        user_id = request.data.get('user_id')
+        raw_trainer_id = request.data.get('trainer_id')
+        raw_class_id = request.data.get('class_id')
+
+        # --- CANDADOS DE SEGURIDAD OBLIGATORIOS ---
+        if not user_id:
+            return Response({"error": "El ID del usuario es requerido."}, status=status.HTTP_400_BAD_REQUEST)
+
+        trainer_id = raw_trainer_id if raw_trainer_id else None
+        class_id = raw_class_id if raw_class_id else None
+
+        if not trainer_id or not class_id:
+            return Response({"error": "Debe seleccionar un entrenador y una clase de forma obligatoria."}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            with transaction.atomic():
+                user = User.objects.get(id=user_id, role='CLIENT', is_active=True)
+                
+                attendance = Attendance.objects.create(
+                    user=user,
+                    trainer_id=trainer_id, 
+                    training_class_id=class_id, 
+                    entry_method='MANUAL'
+                )
+                
+                user.refresh_from_db()
+
+            return Response({
+                'message': 'Asistencia registrada con éxito.',
+                'remaining_classes': user.remaining_classes,
+                'is_debt': getattr(attendance, 'is_debt', False)
+            }, status=status.HTTP_200_OK)
+            
+        except User.DoesNotExist:
+            return Response({'error': 'Socio no encontrado o inactivo.'}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({"error": f"Error al procesar asistencia: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
     @action(detail=False, methods=['POST'], url_path='bulk-confirm')
     def bulk_confirm(self, request):
-        """
-        Registra la asistencia para múltiples usuarios de forma masiva.
-        Espera una lista de 'user_ids', un 'entry_method' y una 'attendance_date' opcional.
-        """
         serializer = BulkAttendanceSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
@@ -77,23 +106,41 @@ class AttendanceViewSet(viewsets.ModelViewSet):
         user_ids = validated_data['user_ids']
         entry_method = validated_data['entry_method']
         
-        # Usar la fecha del serializador o la actual si no se proveyó
-        attendance_timestamp = validated_data.get('attendance_date', timezone.now())
+        trainer_id = validated_data['trainer_id']
+        class_id = validated_data['class_id']
 
         try:
             with transaction.atomic():
-                attendances_to_create = [
-                    Attendance(
-                        user_id=user_id, 
-                        entry_method=entry_method,
-                        timestamp=attendance_timestamp
+                # --- MAGIA DE TIEMPO: Fecha seleccionada + Hora actual del sistema ---
+                now = timezone.localtime() # Capturamos la hora exacta en este momento
+                attendance_timestamp = validated_data.get('attendance_date', now)
+                
+                # Si React envió una fecha, reemplazamos sus 00:00:00 por la hora actual
+                if 'attendance_date' in validated_data:
+                    attendance_timestamp = attendance_timestamp.replace(
+                        hour=now.hour, 
+                        minute=now.minute, 
+                        second=now.second,
+                        microsecond=now.microsecond
                     )
-                    for user_id in user_ids
-                ]
-                Attendance.objects.bulk_create(attendances_to_create)
+
+                users = User.objects.filter(id__in=user_ids)
+                user_dict = {u.id: u for u in users}
+                
+                # Bucle de creación con la hora del sistema
+                for uid in user_ids:
+                    user = user_dict.get(uid)
+                    if user:
+                        Attendance.objects.create(
+                            user=user,
+                            entry_method=entry_method,
+                            timestamp=attendance_timestamp,
+                            trainer_id=trainer_id,
+                            training_class_id=class_id
+                        )
             
             return Response(
-                {"detail": f"{len(user_ids)} asistencias registradas con éxito en la fecha {attendance_timestamp.strftime('%Y-%m-%d %H:%M:%S')}."},
+                {"detail": f"{len(user_ids)} asistencias registradas con éxito."},
                 status=status.HTTP_201_CREATED
             )
         except Exception as e:
@@ -104,9 +151,6 @@ class AttendanceViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['POST'], parser_classes=[MultiPartParser, FormParser], url_path='upload-whatsapp')
     def upload_whatsapp(self, request):
-        """
-        Recibe una imagen (captura de WhatsApp), la procesa y devuelve los clientes detectados.
-        """
         file_obj = request.FILES.get('image')
         
         if not file_obj:
@@ -125,3 +169,24 @@ class AttendanceViewSet(viewsets.ModelViewSet):
                 {"error": f"Error interno procesando la imagen: {str(e)}"}, 
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+
+    @action(detail=False, methods=['GET'], url_path='trainers')
+    def get_trainers(self, request):
+        trainers = User.objects.filter(role__in=['STAFF', 'ADMIN'], is_active=True)
+        
+        data = [
+            {
+                "id": t.id, 
+                "first_name": t.first_name, 
+                "last_name": t.last_name,
+                "internal_code": t.internal_code
+            } 
+            for t in trainers
+        ]
+        return Response(data, status=status.HTTP_200_OK)
+        
+
+class TrainingClassViewSet(viewsets.ModelViewSet):
+    queryset = TrainingClass.objects.filter(is_active=True).order_by('schedule_time')
+    serializer_class = TrainingClassSerializer
+    permission_classes = [AllowAny]

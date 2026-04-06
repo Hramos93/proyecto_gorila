@@ -3,26 +3,41 @@ import axios from 'axios';
 import toast from 'react-hot-toast';
 
 export const apiClient = axios.create({
-  // 1. Unificamos el dominio. Usa 'localhost' en lugar de '127.0.0.1'
-  baseURL: 'http://localhost:8000/api/v1', 
-  withCredentials: true, // Permite el envío de cookies
-  
-  // 2. MAGIA DE DJANGO: Le decimos a Axios que busque la cookie CSRF 
-  // y la inyecte automáticamente en los encabezados de cada petición.
-  xsrfCookieName: 'csrftoken',
-  xsrfHeaderName: 'X-CSRFToken',
+  // URL base apuntando a nuestro Django local
+  baseURL: 'http://localhost:8000/api/v1',
+  // ¡ELIMINADO!: withCredentials y las variables CSRF ya no son necesarias para JWT.
 });
 
+// NUEVO: Interceptor de Peticiones (Request)
+apiClient.interceptors.request.use((config) => {
+  // Buscamos el token en el almacenamiento local del navegador
+  const token = localStorage.getItem('access_token');
+  if (token) {
+    // Si existe, lo adjuntamos al encabezado de autorización
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+// ACTUALIZADO: Interceptor de Respuestas (Response)
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
-    const status = error.response ? error.response.status : null;
+    const status = error.response?.status;
     
     if (status === 401) {
-      toast.error('Sesión expirada o no iniciada.');
-      window.location.href = '/login';
+      // Si el backend dice 401, el token expiró o es inválido.
+      // Limpiamos los rastros y forzamos el login.
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('refresh_token');
+      
+      // Evitamos mostrar el toast si ya estamos en la página de login
+      if (window.location.pathname !== '/login') {
+        toast.error('Tu sesión ha expirado.');
+        window.location.href = '/login';
+      }
     } else if (status === 403) {
-      toast.error('Acceso denegado (403). Permisos insuficientes.');
+      toast.error('Acceso denegado. Permisos insuficientes.');
     } else if (status >= 500) {
       toast.error('Error interno del servidor (Django).');
     }

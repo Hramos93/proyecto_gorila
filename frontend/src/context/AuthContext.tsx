@@ -1,3 +1,4 @@
+// src/context/AuthContext.tsx
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { User } from '../types/user';
 import * as authService from '../features/auth/services/authService';
@@ -7,7 +8,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (credentials: authService.LoginCredentials) => Promise<void>;
-  logout: () => Promise<void>;
+  logout: () => void; // Ya no necesita ser una Promesa (async)
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -16,7 +17,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Verificar si hay una sesión activa al cargar la app
   useEffect(() => {
     const initAuth = async () => {
       try {
@@ -36,19 +36,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setUser(userData);
   };
 
- const logout = async () => {
-  try {
-    // Intentamos avisar al servidor, pero no bloqueamos el proceso si falla
-    await authService.logout();
-  } catch (error) {
-    console.warn("No se pudo cerrar sesión en el servidor, limpiando localmente...");
-  } finally {
-    // IMPORTANTE: Siempre limpiamos el estado local y redirigimos
+  const logout = () => {
+    // Ejecuta el servicio que borra los tokens del LocalStorage
+    authService.logout();
+    // Limpia el estado de React
     setUser(null);
-    localStorage.removeItem('token'); // Si usas tokens, asegúrate de limpiarlos
+    // Redirige
     window.location.href = '/login'; 
-  }
-};
+  };
 
   return (
     <AuthContext.Provider value={{ user, isAuthenticated: !!user, isLoading, login, logout }}>
